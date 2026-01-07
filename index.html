@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>लधा क्रिकेट टूर्नामेंट - डिजिटल नियम पुस्तिका</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            background-color: #fdfbf7; /* Warm neutral background */
+            color: #1f2937;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* Custom scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .active-tab {
+            border-bottom: 3px solid #ea580c; /* Orange-600 */
+            color: #ea580c;
+            font-weight: 700;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Background: #fdfbf7) with Energetic Orange (#ea580c) and Deep Blue (#1e3a8a) accents for sports vibe. -->
+    <!-- Application Structure Plan: 
+         1. Hero Section: Sets the tone, family event vibe.
+         2. Tournament Format (Dashboard): Quick stats on teams/overs/format using cards.
+         3. Interactive Rulebook (Tabs): Logic grouping of Batting, Bowling, Fielding, Scoring. Users click to reveal details.
+         4. Challenge Over Simulator: A dedicated interactive tool to calculate risks/rewards, as this is the most complex rule.
+         5. Visual Analytics: Charts to show Score Distribution logic and Over Quotas.
+         Rationale: The report has complex conditional rules (Challenge over multipliers, Ladies double runs). A linear text document is hard to memorize. An interactive app allows players to "simulate" scenarios and quickly check rules on the field. -->
+    <!-- Visualization & Content Choices:
+         1. Over Distribution (Doughnut Chart): Shows 3 mandatory ladies overs vs 5 open overs. Goal: Clarify quota.
+         2. Scoring Potential (Bar Chart): Compares Normal Run vs Ladies Run vs Challenge Over wins. Goal: Highlight the high stakes of the Challenge Over.
+         3. Challenge Calculator (JS Tool): Input runs -> Output total. Goal: Instant math for captains.
+         4. Scoring Zones (Text/Icon Grid): Maps net areas to runs. Goal: Spatial understanding.
+         NO SVG/Mermaid used. Standard HTML/Tailwind/Chart.js used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="antialiased">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-orange-600">🏏 लधा क्रिकेट</span>
+                </div>
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#format" class="text-gray-600 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition">प्रारूप (Format)</a>
+                    <a href="#rules" class="text-gray-600 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition">नियम (Rules)</a>
+                    <a href="#challenge" class="text-gray-600 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition">चैलेंज कैलकुलेटर</a>
+                    <a href="#scoring" class="text-gray-600 hover:text-orange-600 px-3 py-2 rounded-md text-sm font-medium transition">स्कोरिंग</a>
+                </div>
+                <!-- Mobile menu button placeholder -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-orange-600 focus:outline-none">
+                        <span class="text-2xl">☰</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <a href="#format" class="block text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-4 py-2 text-sm font-medium">प्रारूप</a>
+            <a href="#rules" class="block text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-4 py-2 text-sm font-medium">नियम</a>
+            <a href="#challenge" class="block text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-4 py-2 text-sm font-medium">चैलेंज कैलकुलेटर</a>
+            <a href="#scoring" class="block text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-4 py-2 text-sm font-medium">स्कोरिंग</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+        <div class="max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4">पारिवारिक टर्फ क्रिकेट टूर्नामेंट 2024</h1>
+            <p class="text-xl md:text-2xl font-light opacity-90 mb-8">खेल, परिवार और असीमित मज़ा!</p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <div class="bg-white/20 backdrop-blur-sm rounded-lg px-6 py-3">
+                    <span class="block text-3xl font-bold">5</span>
+                    <span class="text-sm">टीमें</span>
+                </div>
+                <div class="bg-white/20 backdrop-blur-sm rounded-lg px-6 py-3">
+                    <span class="block text-3xl font-bold">40</span>
+                    <span class="text-sm">खिलाड़ी</span>
+                </div>
+                <div class="bg-white/20 backdrop-blur-sm rounded-lg px-6 py-3">
+                    <span class="block text-3xl font-bold">8</span>
+                    <span class="text-sm">ओवर/मैच</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+
+        <!-- Section 1: Tournament Format -->
+        <section id="format" class="scroll-mt-20">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-gray-800">टूर्नामेंट का प्रारूप (Format)</h2>
+                <p class="text-gray-600 mt-2 max-w-2xl mx-auto">लीग स्टेज और फाइनल के लिए चयन प्रक्रिया को समझें।</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <!-- Info Cards -->
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover">
+                        <h3 class="font-bold text-lg text-blue-900 mb-2">🏆 लीग और फाइनल</h3>
+                        <p class="text-gray-600">कुल 5 लीग मैच होंगे। हर टीम को खेलने का मौका मिलेगा। टॉप 2 टीमें फाइनल में भिड़ेंगी।</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover">
+                        <h3 class="font-bold text-lg text-blue-900 mb-2">📊 रैंकिंग सिस्टम</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-1">
+                            <li><strong>प्राथमिकता 1:</strong> सबसे अधिक जीत (Wins)।</li>
+                            <li><strong>प्राथमिकता 2:</strong> यदि जीत बराबर है, तो कुल रन (Total Runs) देखे जाएंगे।</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 card-hover">
+                        <h3 class="font-bold text-lg text-blue-900 mb-2">⏳ समय सीमा</h3>
+                        <p class="text-gray-600">8 ओवर प्रति पारी। समय का पालन अनिवार्य है!</p>
+                    </div>
+                </div>
+
+                <!-- Chart: Over Distribution -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                    <h3 class="font-bold text-center text-gray-800 mb-4">ओवर वितरण (8 ओवर)</h3>
+                    <div class="chart-container">
+                        <canvas id="overDistributionChart"></canvas>
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-4">
+                        <span class="inline-block w-3 h-3 bg-pink-500 rounded-full mr-1"></span>महिला बॉलिंग (अनिवार्य)
+                        <span class="inline-block w-3 h-3 bg-blue-500 rounded-full ml-3 mr-1"></span>ओपन (कोई भी)
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Interactive Rulebook -->
+        <section id="rules" class="scroll-mt-20 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-gray-50 p-6 border-b">
+                <h2 class="text-3xl font-bold text-gray-800 text-center">विस्तृत नियम पुस्तिका</h2>
+                <p class="text-center text-gray-600 mt-2">खेल के हर पहलू के लिए नियमों को जानने के लिए नीचे दिए गए टैब्स पर क्लिक करें।</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex overflow-x-auto border-b">
+                <button onclick="switchTab('batting')" id="tab-batting" class="active-tab flex-1 py-4 px-6 text-center focus:outline-none hover:bg-gray-50 transition whitespace-nowrap">🏏 बैटिंग (Batting)</button>
+                <button onclick="switchTab('bowling')" id="tab-bowling" class="flex-1 py-4 px-6 text-center text-gray-500 focus:outline-none hover:bg-gray-50 transition whitespace-nowrap">🥎 बॉलिंग (Bowling)</button>
+                <button onclick="switchTab('fielding')" id="tab-fielding" class="flex-1 py-4 px-6 text-center text-gray-500 focus:outline-none hover:bg-gray-50 transition whitespace-nowrap">🛡️ फील्डिंग & आउट</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-6 md:p-8 min-h-[400px]">
+                
+                <!-- Batting Content -->
+                <div id="content-batting" class="tab-content block animate-fade-in">
+                    <h3 class="text-xl font-bold text-orange-600 mb-4">बल्लेबाजी और रनिंग के नियम</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div class="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-500">
+                                <h4 class="font-bold">🏃‍♂️ रनिंग (Running)</h4>
+                                <p class="text-sm">दौड़ने की ज़रूरत नहीं। क्रीज लाइन पार करने पर <strong>1 रन</strong> मिलता है और स्ट्राइक बदल जाती है।</p>
+                            </div>
+                            <div class="bg-pink-50 p-4 rounded-lg border-l-4 border-pink-500">
+                                <h4 class="font-bold">👩 लेडीज बोनस (Double Runs)</h4>
+                                <p class="text-sm">महिलाओं के हर रन <strong>दोगुने (x2)</strong> होंगे। (1 रन = 2, 4 रन = 8)।</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-gray-500">
+                                <h4 class="font-bold">🚪 बैटिंग क्रम (Entry)</h4>
+                                <ul class="list-disc list-inside text-sm space-y-1">
+                                    <li>ओपनिंग: दोनों महिलाएं।</li>
+                                    <li>आउट होने पर पुरुष आ सकता है।</li>
+                                    <li>पुरुष आउट होने पर अगली महिला ही आएगी।</li>
+                                </ul>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-500">
+                                <h4 class="font-bold">⚠️ रिटायरमेंट (3-Miss Rule)</h4>
+                                <p class="text-sm">लगातार 3 गेंद मिस करने पर रिटायर। (शरीर पर लगना मिस नहीं है)। पूरी टीम खेलने के बाद ही वापसी संभव।</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bowling Content -->
+                <div id="content-bowling" class="tab-content hidden animate-fade-in">
+                    <h3 class="text-xl font-bold text-blue-600 mb-4">गेंदबाजी के नियम</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white border rounded-lg p-5 shadow-sm">
+                            <div class="flex items-center mb-3">
+                                <span class="text-2xl mr-2">🥎</span>
+                                <h4 class="font-bold text-lg">कोटा और स्टाइल</h4>
+                            </div>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li>• <strong>पहला ओवर:</strong> महिला द्वारा अनिवार्य।</li>
+                                <li>• <strong>कुल कोटा:</strong> 8 में से 3 ओवर महिलाएं डालेंगी।</li>
+                                <li>• <strong>पुरुष:</strong> केवल Underarm बॉलिंग।</li>
+                                <li>• <strong>महिलाएं:</strong> Overarm या Underarm (इच्छानुसार)।</li>
+                            </ul>
+                        </div>
+                        <div class="bg-white border rounded-lg p-5 shadow-sm">
+                            <div class="flex items-center mb-3">
+                                <span class="text-2xl mr-2">🚨</span>
+                                <h4 class="font-bold text-lg">एक्स्ट्रा (Extras)</h4>
+                            </div>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li>• <strong>Wide:</strong> 1 रन।</li>
+                                <li>• <strong>No Ball:</strong> 1 रन + Free Hit।</li>
+                                <li>• <strong>LBW:</strong> आउट नहीं।</li>
+                                <li class="text-red-600 font-semibold text-xs mt-2 bg-red-50 p-2 rounded">
+                                    महत्वपूर्ण: महिलाओं के लिए 2-टप्पा बॉल वैध है, अगर दूसरा टप्पा क्रीज के अंदर हो।
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fielding Content -->
+                <div id="content-fielding" class="tab-content hidden animate-fade-in">
+                    <h3 class="text-xl font-bold text-green-600 mb-4">फील्डिंग और आउट</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div class="p-4 bg-green-50 rounded-lg">
+                            <div class="text-3xl mb-2">✋</div>
+                            <h4 class="font-bold mb-1">1-Tip 1-Hand</h4>
+                            <p class="text-xs text-gray-600">सिर्फ महिलाओं के लिए। एक टप्पे के बाद एक हाथ से कैच आउट है।</p>
+                        </div>
+                        <div class="p-4 bg-green-50 rounded-lg">
+                            <div class="text-3xl mb-2">🥅</div>
+                            <h4 class="font-bold mb-1">छत (Roof)</h4>
+                            <p class="text-xs text-gray-600">ऊपर वाले नेट को लगकर डायरेक्ट कैच = OUT।</p>
+                        </div>
+                        <div class="p-4 bg-green-50 rounded-lg">
+                            <div class="text-3xl mb-2">🛡️</div>
+                            <h4 class="font-bold mb-1">घेरा (Field Setup)</h4>
+                            <p class="text-xs text-gray-600">4 आगे, 4 पीछे। बाउंड्री पर मैक्स 3 फील्डर (1 महिला अनिवार्य)।</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Section 3: Challenge Calculator (Interactive) -->
+        <section id="challenge" class="scroll-mt-20">
+            <div class="bg-gradient-to-br from-indigo-900 to-blue-800 rounded-2xl shadow-2xl p-6 md:p-10 text-white">
+                <div class="flex flex-col md:flex-row gap-10 items-center">
+                    
+                    <!-- Left: Explanation -->
+                    <div class="md:w-1/2 space-y-6">
+                        <h2 class="text-3xl font-extrabold text-yellow-400">🔥 चैलेंज ओवर कैलकुलेटर</h2>
+                        <p class="text-blue-100 leading-relaxed">
+                            मैच का सबसे बड़ा जुआ! पहले 6 ओवर में, जब कोई महिला क्रीज पर हो, तो बैटिंग टीम "चैलेंज" ले सकती है।
+                            रिस्क लें और स्कोर को दोगुना या तिगुना करें।
+                        </p>
+                        <div class="bg-white/10 p-4 rounded-lg backdrop-blur-sm">
+                            <h4 class="font-bold text-yellow-300 mb-2">नियम:</h4>
+                            <ul class="text-sm space-y-1 text-blue-50">
+                                <li>• 6-12 रन का लक्ष्य = <strong>2x स्कोर</strong></li>
+                                <li>• 12+ रन का लक्ष्य = <strong>3x स्कोर</strong></li>
+                                <li>• फेल होने पर = <strong>0 रन</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Right: Calculator -->
+                    <div class="md:w-1/2 w-full bg-white text-gray-800 rounded-xl p-6 shadow-xl">
+                        <h3 class="text-lg font-bold mb-4 text-gray-700">जोखिम और इनाम (Risk & Reward)</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">आप कितने रन का चैलेंज लेंगे?</label>
+                                <input type="range" id="challengeInput" min="6" max="24" value="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-600">
+                                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                    <span>6 रन</span>
+                                    <span id="sliderValue" class="text-lg font-bold text-orange-600">10 रन</span>
+                                    <span>24 रन</span>
+                                </div>
+                            </div>
+
+                            <div id="resultBox" class="bg-gray-100 p-4 rounded-lg border-2 border-dashed border-gray-300 transition-all duration-300">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-gray-500">मल्टीप्लायर:</span>
+                                    <span id="multiplierBadge" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">2x (Double)</span>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-sm text-gray-500">सफल होने पर आपके स्कोर में जुड़ेंगे:</p>
+                                    <p id="finalScore" class="text-4xl font-extrabold text-green-600 mt-1">20 रन</p>
+                                </div>
+                            </div>
+
+                            <div class="text-xs text-center text-red-500 font-medium">
+                                ⚠️ चेतावनी: अगर आप <span id="targetDisplay">10</span> रन नहीं बना पाए, तो आपको 0 मिलेंगे!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Visual Scoring Guide -->
+        <section id="scoring" class="scroll-mt-20">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">स्कोरिंग चार्ट (Scoring)</h2>
+                <p class="text-gray-600">नेट के किस हिस्से पर कितने रन मिलेंगे?</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Visual Map -->
+                <div class="bg-white p-6 rounded-xl shadow border border-gray-200">
+                    <h3 class="font-bold text-lg mb-4 text-center">नेट ज़ोन</h3>
+                    <div class="grid grid-cols-2 gap-4 h-64">
+                        <div class="col-span-2 bg-blue-100 rounded-lg flex flex-col justify-center items-center border-2 border-blue-200 relative">
+                            <span class="text-xs font-bold text-blue-800 uppercase tracking-wider">सामने वाला नेट (Front)</span>
+                            <span class="text-3xl font-extrabold text-blue-900">6 रन</span>
+                            <div class="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                                जैकपॉट Point: 8
+                            </div>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg flex flex-col justify-center items-center border-2 border-gray-200">
+                            <span class="text-xs font-bold text-gray-600">साइड नेट (पुरुष)</span>
+                            <span class="text-2xl font-bold text-gray-800">0 / 1 रन</span>
+                            <span class="text-[10px] text-gray-500">(दौड़ कर)</span>
+                        </div>
+                        <div class="bg-pink-100 rounded-lg flex flex-col justify-center items-center border-2 border-pink-200">
+                            <span class="text-xs font-bold text-pink-800">साइड नेट (महिला)</span>
+                            <span class="text-2xl font-bold text-pink-900">2 रन</span>
+                            <span class="text-[10px] text-pink-600">(स्कोर में 4 जुड़ेंगे)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison Chart -->
+                <div class="bg-white p-6 rounded-xl shadow border border-gray-200">
+                    <h3 class="font-bold text-lg mb-4 text-center">रन का प्रभाव (Impact of Runs)</h3>
+                    <p class="text-xs text-gray-500 text-center mb-2">एक ही शॉट के अलग-अलग खिलाड़ियों के लिए अंक</p>
+                    <div class="chart-container">
+                        <canvas id="scoringImpactChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center text-gray-400 text-sm py-8 mt-10 border-t">
+            <p>फैमिली टर्फ क्रिकेट टूर्नामेंट 2024</p>
+            <p class="mt-1">अंपायर का निर्णय अंतिम है। खेल भावना बनाए रखें!</p>
+        </footer>
+
+    </main>
+
+    <script>
+        // --- Tab Switching Logic ---
+        function switchTab(tabName) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            // Reset tab styles
+            document.querySelectorAll('button[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('active-tab', 'text-orange-600');
+                btn.classList.add('text-gray-500');
+            });
+
+            // Show selected content
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            // Highlight selected tab
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.add('active-tab');
+            activeBtn.classList.remove('text-gray-500');
+        }
+
+        // --- Challenge Calculator Logic ---
+        const slider = document.getElementById('challengeInput');
+        const sliderValue = document.getElementById('sliderValue');
+        const finalScore = document.getElementById('finalScore');
+        const multiplierBadge = document.getElementById('multiplierBadge');
+        const resultBox = document.getElementById('resultBox');
+        const targetDisplay = document.getElementById('targetDisplay');
+
+        function updateCalculator() {
+            const runs = parseInt(slider.value);
+            let multiplier = 2;
+            let bgClass = "bg-blue-100 text-blue-800";
+
+            if (runs > 12) {
+                multiplier = 3;
+                bgClass = "bg-purple-100 text-purple-800";
+            }
+
+            const total = runs * multiplier;
+
+            sliderValue.textContent = `${runs} रन`;
+            targetDisplay.textContent = runs;
+            finalScore.textContent = `${total} रन`;
+            
+            // Update Badge
+            multiplierBadge.className = `${bgClass} text-xs font-semibold px-2.5 py-0.5 rounded transition-colors duration-300`;
+            multiplierBadge.textContent = `${multiplier}x (${multiplier === 2 ? 'Double' : 'Triple'})`;
+
+            // Visual feedback on result box
+            if (multiplier === 3) {
+                resultBox.classList.add('bg-purple-50', 'border-purple-200');
+                resultBox.classList.remove('bg-gray-100', 'border-gray-300');
+                finalScore.classList.remove('text-green-600');
+                finalScore.classList.add('text-purple-600');
+            } else {
+                resultBox.classList.remove('bg-purple-50', 'border-purple-200');
+                resultBox.classList.add('bg-gray-100', 'border-gray-300');
+                finalScore.classList.add('text-green-600');
+                finalScore.classList.remove('text-purple-600');
+            }
+        }
+
+        slider.addEventListener('input', updateCalculator);
+
+        // --- Mobile Menu Toggle ---
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        // --- Charts Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Chart 1: Over Distribution
+            const ctx1 = document.getElementById('overDistributionChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['महिला बॉलिंग (अनिवार्य)', 'ओपन (पुरुष/महिला)'],
+                    datasets: [{
+                        data: [3, 5],
+                        backgroundColor: ['#ec4899', '#3b82f6'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${context.raw} ओवर`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart 2: Scoring Impact
+            const ctx2 = document.getElementById('scoringImpactChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['1 रन (दौड़कर)', 'साइड नेट', 'सिक्स (6)', 'जैकपॉट (8)'],
+                    datasets: [
+                        {
+                            label: 'पुरुष खिलाड़ी',
+                            data: [1, 1, 6, 8],
+                            backgroundColor: '#94a3b8',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'महिला खिलाड़ी (2x)',
+                            data: [2, 4, 12, 16], // Calculated double values
+                            backgroundColor: '#ec4899',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'स्कोर में जुड़ने वाले रन' }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                footer: function(tooltipItems) {
+                                    if(tooltipItems[0].datasetIndex === 1) {
+                                        return 'महिला बोनस: रन x 2';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize calculator state
+            updateCalculator();
+        });
+
+    </script>
+</body>
+</html>
